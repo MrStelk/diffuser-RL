@@ -107,7 +107,10 @@ for t in range(args.max_episode_length):
     rollout.append(next_observation.copy())
 
     ## render every `args.vis_freq` steps
-    logger.log(t, samples, state, rollout)
+    # logger.log(t, samples, state, rollout)
+    # print("rollout : ", len(rollout), len(rollout[0]), rollout)
+    # print("samples: ", len(samples[1][0]), samples[1][0])
+    # print("state: ", len(state), state)
 
     if terminal:
         break
