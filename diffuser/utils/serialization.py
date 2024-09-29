@@ -28,12 +28,15 @@ def get_latest_epoch(loadpath):
 
 def load_config(*loadpath):
     loadpath = os.path.join(*loadpath)
-    config = pickle.load(open(loadpath, 'rb'))
+    config = pickle.load(open(loadpath, 'rb')) # Loads the configs
     print(f'[ utils/serialization ] Loaded config from {loadpath}')
     print(config)
     return config
 
 def load_diffusion(*loadpath, epoch='latest', device='cuda:0'):
+    """
+    loads all the configuration from .pkl files.
+    """
     dataset_config = load_config(*loadpath, 'dataset_config.pkl')
     render_config = load_config(*loadpath, 'render_config.pkl')
     model_config = load_config(*loadpath, 'model_config.pkl')
@@ -44,17 +47,18 @@ def load_diffusion(*loadpath, epoch='latest', device='cuda:0'):
     ## @TODO : remove results folder from within trainer class
     trainer_config._dict['results_folder'] = os.path.join(*loadpath)
 
+    # Instantiates the classes.
     dataset = dataset_config()
     renderer = render_config()
     model = model_config()
-    diffusion = diffusion_config(model)
-    trainer = trainer_config(diffusion, dataset, renderer)
+    diffusion = diffusion_config(model) # GaussianDiffusion class
+    trainer = trainer_config(diffusion, dataset, renderer) # Trainer class
 
     if epoch == 'latest':
         epoch = get_latest_epoch(loadpath)
 
     print(f'\n[ utils/serialization ] Loading model epoch: {epoch}\n')
 
-    trainer.load(epoch)
+    trainer.load(epoch) # Loads the actual model weights from .pt file.
 
     return DiffusionExperiment(dataset, renderer, model, diffusion, trainer.ema_model, trainer, epoch)
