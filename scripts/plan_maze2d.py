@@ -30,7 +30,7 @@ classes are then instantiated.
 Trainer class is defined in /diffuser/utils/training.py. 
 After instantiaition, Trainer.load() method is called which actually loads the diffusion model weights.
 All the instantiations are retuned in  named tuple with (dataset renderer model diffusion ema trainer epoch) keys.
-.ema containes the actual model class like an nn.model class.
+.ema containes the actual model class like an nn.module class for models.
 """ 
 
 diffusion = diffusion_experiment.ema
