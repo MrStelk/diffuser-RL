@@ -33,34 +33,50 @@ policy = Policy(diffusion, dataset.normalizer)
 #---------------------------------- main loop ----------------------------------#
 
 observation = env.reset()
-
 if args.conditional:
     print('Resetting target')
     env.set_target()
+
+# env.unwrapped._target = (4.0,6.0)
 
 ## set conditioning xy position to be the goal
 target = env._target
 cond = {
     diffusion.horizon - 1: np.array([*target, 0, 0]),
 }
-
 ## observations for rendering
 rollout = [observation.copy()]
-
 total_reward = 0
+
+"""
+state_tmp = env.sim.get_state()
+print("state: ", state_tmp)
+qpos = state_tmp.qpos.copy()
+qvel = state_tmp.qvel.copy()
+qpos[0] = 1.0
+qpos[1] = 1.0
+env.set_state(qpos, qvel)
+"""
+
+# env.max_episode_steps=15
+
 for t in range(env.max_episode_steps):
 
     state = env.state_vector().copy()
-
+    # print("state : ", state)
     ## can replan if desired, but the open-loop plans are good enough for maze2d
     ## that we really only need to plan once
     if t == 0:
         cond[0] = observation
-
+        # print("conditions: ", cond)
         action, samples = policy(cond, batch_size=args.batch_size)
         actions = samples.actions[0]
         sequence = samples.observations[0]
+        # print("samples : ", samples)
     # pdb.set_trace()
+
+    
+    # print("predicted state : ", samples.observations[0][t])
 
     # ####
     if t < len(sequence) - 1:

@@ -40,7 +40,7 @@ class Policy:
 
 
         conditions = self._format_conditions(conditions, batch_size)
-
+        # print("formatted conditions: ", conditions)
         ## batchify and move to tensor [ batch_size x observation_dim ]
         # observation_np = observation_np[None].repeat(batch_size, axis=0)
         # observation = utils.to_torch(observation_np, device=self.device)
