@@ -104,6 +104,8 @@ class Trainer(object):
     def train(self, n_train_steps):
 
         timer = Timer()
+
+        # Actual diffusion model training loop.
         for step in range(n_train_steps):
             for i in range(self.gradient_accumulate_every):
                 batch = next(self.dataloader)
@@ -156,10 +158,11 @@ class Trainer(object):
             loads model and ema from disk
         '''
         loadpath = os.path.join(self.logdir, f'state_{epoch}.pt')
-        data = torch.load(loadpath)
+        data = torch.load(loadpath) # Loads the actual model weights.
 
+        # member variables are updated.
         self.step = data['step']
-        self.model.load_state_dict(data['model'])
+        self.model.load_state_dict(data['model']) 
         self.ema_model.load_state_dict(data['ema'])
 
     #-----------------------------------------------------------------------------#

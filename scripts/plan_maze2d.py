@@ -14,7 +14,7 @@ class Parser(utils.Parser):
 
 #---------------------------------- setup ----------------------------------#
 
-args = Parser().parse_args('plan')
+args = Parser().parse_args('plan') # All args in the /config folder under "plan" key.
 
 # logger = utils.Logger(args)
 
@@ -23,16 +23,32 @@ env = datasets.load_environment(args.dataset)
 #---------------------------------- loading ----------------------------------#
 
 diffusion_experiment = utils.load_diffusion(args.logbase, args.dataset, args.diffusion_loadpath, epoch=args.diffusion_epoch)
+"""
+load_diffusion() calls load_config() function. Both defined in /diffuser/utils/serialization.py file.
+load_config() loads in the dataset, renderer, diffusion, trainer classes from the respective .pkl files.
+classes are then instantiated.
+Trainer class is defined in /diffuser/utils/training.py. 
+After instantiaition, Trainer.load() method is called which actually loads the diffusion model weights.
+All the instantiations are retuned in  named tuple with (dataset renderer model diffusion ema trainer epoch) keys.
+.ema containes the actual model class like an nn.module class for models.
+""" 
 
 diffusion = diffusion_experiment.ema
 dataset = diffusion_experiment.dataset
 renderer = diffusion_experiment.renderer
 
 policy = Policy(diffusion, dataset.normalizer)
+"""
+Policy is a class defined in /diffuser/guides/policy.py. When instantiated, it simply registers the model and
+a function(normalize in this case) into its member variables. 
+__call__ to Policy class as in the main loop calls the diffusion model and retunes the model output in a 
+named tuple with (actions, observations) as keys.
+"""
 
 #---------------------------------- main loop ----------------------------------#
 
-observation = env.reset()
+observation = env.reset() # Initial setting. 
+
 if args.conditional:
     print('Resetting target')
     env.set_target()
@@ -42,10 +58,11 @@ if args.conditional:
 ## set conditioning xy position to be the goal
 target = env._target
 cond = {
-    diffusion.horizon - 1: np.array([*target, 0, 0]),
+    diffusion.horizon - 1: np.array([*target, 0, 0]), # Goal to reach.
 }
 ## observations for rendering
-rollout = [observation.copy()]
+rollout = [observation.copy()] # list to contain all observations.
+
 total_reward = 0
 
 """
@@ -62,12 +79,12 @@ env.set_state(qpos, qvel)
 
 for t in range(env.max_episode_steps):
 
-    state = env.state_vector().copy()
-    # print("state : ", state)
+    state = env.state_vector().copy() # current state(observation)
     ## can replan if desired, but the open-loop plans are good enough for maze2d
     ## that we really only need to plan once
     if t == 0:
         cond[0] = observation
+
         # print("conditions: ", cond)
         action, samples = policy(cond, batch_size=args.batch_size)
         actions = samples.actions[0]
@@ -88,6 +105,9 @@ for t in range(env.max_episode_steps):
 
     ## can use actions or define a simple controller based on state predictions
     action = next_waypoint[:2] - state[:2] + (next_waypoint[2:] - state[2:])
+    """
+    computes the action from the observations. why is this being done when actions are also generated?
+    """
     # pdb.set_trace()
     ####
 
@@ -102,7 +122,7 @@ for t in range(env.max_episode_steps):
 
 
 
-    next_observation, reward, terminal, _ = env.step(action)
+    next_observation, reward, terminal, _ = env.step(action) # takes action in environment.
     total_reward += reward
     score = env.get_normalized_score(total_reward)
     print(
@@ -118,7 +138,7 @@ for t in range(env.max_episode_steps):
         )
 
     ## update rollout observations
-    rollout.append(next_observation.copy())
+    rollout.append(next_observation.copy()) # Adds observation.
 
     # logger.log(score=score, step=t)
 
@@ -140,7 +160,7 @@ for t in range(env.max_episode_steps):
     if terminal:
         break
 
-    observation = next_observation
+    observation = next_observation # Update observation.
 
 # logger.finish(t, env.max_episode_steps, score=score, value=0)
 
