@@ -1,6 +1,51 @@
 import diffuser.utils as utils
 
+"""
+'diffusion': {
+    ## model
+    'model': 'models.TemporalUnet',
+    'diffusion': 'models.GaussianDiffusion',
+    'horizon': 32,
+    'n_diffusion_steps': 20,
+    'action_weight': 10,
+    'loss_weights': None,
+    'loss_discount': 1,
+    'predict_epsilon': False,
+    'dim_mults': (1, 2, 4, 8),
+    'attention': False,
+    'renderer': 'utils.MuJoCoRenderer',
 
+    ## dataset
+    'loader': 'datasets.SequenceDataset',
+    'normalizer': 'GaussianNormalizer',
+    'preprocess_fns': [],
+    'clip_denoised': False,
+    'use_padding': True,
+    'max_path_length': 1000,
+
+    ## serialization
+    'logbase': logbase,
+    'prefix': 'diffusion/defaults',
+    'exp_name': watch(args_to_watch),
+
+    ## training
+    'n_steps_per_epoch': 10000,
+    'loss_type': 'l2',
+    'n_train_steps': 1e6,
+    'batch_size': 32,
+    'learning_rate': 2e-4,
+    'gradient_accumulate_every': 2,
+    'ema_decay': 0.995,
+    'save_freq': 20000,
+    'sample_freq': 20000,
+    'n_saves': 5,
+    'save_parallel': False,
+    'n_reference': 8,
+    'bucket': None,
+    'device': 'cuda',
+    'seed': None,
+}
+"""
 #-----------------------------------------------------------------------------#
 #----------------------------------- setup -----------------------------------#
 #-----------------------------------------------------------------------------#
@@ -9,7 +54,7 @@ class Parser(utils.Parser):
     dataset: str = 'hopper-medium-expert-v2'
     config: str = 'config.locomotion'
 
-args = Parser().parse_args('diffusion')
+args = Parser().parse_args('diffusion') # all args in config/locomotion.py under 'diffusion' key
 
 
 #-----------------------------------------------------------------------------#
@@ -120,5 +165,5 @@ n_epochs = int(args.n_train_steps // args.n_steps_per_epoch)
 
 for i in range(n_epochs):
     print(f'Epoch {i} / {n_epochs} | {args.savepath}')
-    trainer.train(n_train_steps=args.n_steps_per_epoch)
+    trainer.train(n_train_steps=args.n_steps_per_epoch) # Trainer class train method trains the model for n_steps_per_epoch epochs.
 
