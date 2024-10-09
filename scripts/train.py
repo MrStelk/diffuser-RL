@@ -61,6 +61,7 @@ args = Parser().parse_args('diffusion') # all args in config/locomotion.py under
 #---------------------------------- dataset ----------------------------------#
 #-----------------------------------------------------------------------------#
 
+# instantiate a config class for datasets.SequenceDataset class
 dataset_config = utils.Config(
     args.loader,
     savepath=(args.savepath, 'dataset_config.pkl'),
@@ -72,15 +73,17 @@ dataset_config = utils.Config(
     max_path_length=args.max_path_length,
 )
 
+# instantiate a config class for utils.MuJoCoRenderer class
 render_config = utils.Config(
     args.renderer,
     savepath=(args.savepath, 'render_config.pkl'),
     env=args.dataset,
 )
 
-dataset = dataset_config()
-renderer = render_config()
+dataset = dataset_config() # Creates a new instance of dataset i.e datasets.SequenceDataset class in diffuser/datasets/sequence.py
+renderer = render_config() # Creates a new instance of dataset i.e utils.MuJoCoRenderer class in diffuser/utils/rendering.py
 
+# Dimensions of env stored in SequenceDataset class member variables.
 observation_dim = dataset.observation_dim
 action_dim = dataset.action_dim
 
@@ -89,6 +92,7 @@ action_dim = dataset.action_dim
 #------------------------------ model & trainer ------------------------------#
 #-----------------------------------------------------------------------------#
 
+# instantiate a config class for models.TemporalUnet  class
 model_config = utils.Config(
     args.model,
     savepath=(args.savepath, 'model_config.pkl'),
@@ -100,6 +104,7 @@ model_config = utils.Config(
     device=args.device,
 )
 
+# instantiate a config class for models.GaussianDiffusion class
 diffusion_config = utils.Config(
     args.diffusion,
     savepath=(args.savepath, 'diffusion_config.pkl'),
@@ -117,6 +122,7 @@ diffusion_config = utils.Config(
     device=args.device,
 )
 
+# instantiate a config class for utils.Trainer class
 trainer_config = utils.Config(
     utils.Trainer,
     savepath=(args.savepath, 'trainer_config.pkl'),
@@ -137,23 +143,29 @@ trainer_config = utils.Config(
 #-------------------------------- instantiate --------------------------------#
 #-----------------------------------------------------------------------------#
 
-model = model_config()
+model = model_config() # Creates an instance of the models.TemporalUnet class in diffuser/models/temporal.py
 
-diffusion = diffusion_config(model)
+diffusion = diffusion_config(model) # Creates an instance of the models.GaussianDiffusion class in diffuser/models/diffusion.py
 
-trainer = trainer_config(diffusion, dataset, renderer)
+trainer = trainer_config(diffusion, dataset, renderer) # Creates an instance of the utils.Trainer class in diffuser/utils/training.py
 
 
 #-----------------------------------------------------------------------------#
 #------------------------ test forward & backward pass -----------------------#
 #-----------------------------------------------------------------------------#
 
-utils.report_parameters(model)
+utils.report_parameters(model) # Prints out some stats of parameter for the TempralUnet model
 
 print('Testing forward...', end=' ', flush=True)
+# SequenceDataset.__getitem__ returns a namedtuple Batch(trajectories, conditions) where trajectories are concatination of actions and observations,
+# conditions = {0:observations[0]} representing the initial state of trajectories. utils.batchify converts numpy batch to tesnsors for proper input to model.
 batch = utils.batchify(dataset[0])
+
+# diffusion.loss() computes loss by first adding noise to trajectories, replace observation dimension of noisy trajectory with that from conditions dict.
+# Then the noise in the image is predicted and loss in computed. call returns loss, info containing 'a0_loss'(not sure what).
+# GaussianDiffusion.loss -> GaussianDiffusion.p_losses -> apply_conditioning, GaussianDiffusion.loss_fn
 loss, _ = diffusion.loss(*batch)
-loss.backward()
+loss.backward() # Backward pass
 print('✓')
 
 
