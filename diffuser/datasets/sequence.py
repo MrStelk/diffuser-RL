@@ -24,9 +24,10 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.horizon = horizon
         self.max_path_length = max_path_length
         self.use_padding = use_padding
-        itr = sequence_dataset(env, self.preprocess_fn)
+        itr = sequence_dataset(env, self.preprocess_fn) # Retunes and iterator over the environment.
 
         fields = ReplayBuffer(max_n_episodes, max_path_length, termination_penalty)
+        # Loop adds all trajectories in the environment into 'fields'.
         for i, episode in enumerate(itr):
             fields.add_path(episode)
         fields.finalize()
@@ -140,7 +141,7 @@ class ValueDataset(SequenceDataset):
         path_ind, start, end = self.indices[idx]
         rewards = self.fields['rewards'][path_ind, start:]
         discounts = self.discounts[:len(rewards)]
-        value = (discounts * rewards).sum()
+        value = (discounts * rewards).sum() # Cummulative reward
         if self.normed:
             value = self.normalize_value(value)
         value = np.array([value], dtype=np.float32)
