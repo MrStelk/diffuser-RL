@@ -159,7 +159,8 @@ for t in range(args.max_episode_length):
     ## format current observation for conditioning
     conditions = {0: observation}
     action, samples = policy(conditions, batch_size=args.batch_size, verbose=args.verbose)
-
+    
+    # print("samles: ", samples[0].shape)
     ## execute action in environment
     next_observation, reward, terminal, _ = env.step(action)
 
