@@ -75,7 +75,7 @@ qpos[1] = 1.0
 env.set_state(qpos, qvel)
 """
 
-# env.max_episode_steps=15
+env.max_episode_steps=2
 
 for t in range(env.max_episode_steps):
 

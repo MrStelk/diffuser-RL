@@ -47,6 +47,7 @@ class Policy:
 
         ## run reverse diffusion process
         sample = self.diffusion_model(conditions)
+        print("sample shape: ", sample.shape)
         sample = utils.to_np(sample)
 
         ## extract action [ batch_size x horizon x transition_dim ]
