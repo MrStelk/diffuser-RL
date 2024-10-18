@@ -108,8 +108,10 @@ base = {
     },
 
     'plan': {
-        'guide': 'sampling.ValueGuide',
-        'policy': 'sampling.GuidedPolicy',
+        'guide': 'sampling.ValueGuide', # Guidance 1 class.
+        'guide2': 'sampling.ValueGuide', # Guidance 2 class.
+        # 'policy': 'sampling.GuidedPolicy', # Policy class
+        'policy': 'sampling.GuidedPolicy2', # Second Policy class
         'max_episode_length': 1000,
         'batch_size': 64,
         'preprocess_fns': [],
@@ -117,10 +119,10 @@ base = {
         'seed': None,
 
         ## sample_kwargs
-        'n_guide_steps': 2,
+        'n_guide_steps': 2, # Runs guidance twice? look in sampling/functions.py
         'scale': 0.1,
-        't_stopgrad': 2,
-        'scale_grad_by_std': True,
+        't_stopgrad': 2, # grad[t < t_stopgrad] = 0
+        'scale_grad_by_std': True, # if scale_grad_by_std: grad = model_var * grad            
 
         ## serialization
         'loadbase': None,
@@ -131,18 +133,20 @@ base = {
         'max_render': 8,
 
         ## diffusion model
-        'horizon': 32,
+        'horizon': 32, # planning horizon
         'n_diffusion_steps': 20,
 
         ## value function
         'discount': 0.997,
 
         ## loading
-        'diffusion_loadpath': 'f:diffusion/defaults_H{horizon}_T{n_diffusion_steps}',
-        'value_loadpath': 'f:values/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}',
+        'diffusion_loadpath': 'f:diffusion/defaults_H{horizon}_T{n_diffusion_steps}', # loadpath of diffusion model.
+        'value_loadpath': 'f:values/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}', # loadpath of guidance model.
+        'value2_loadpath' : 'f:values2/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}', # loadpath of second guidance model.
 
-        'diffusion_epoch': 'latest',
-        'value_epoch': 'latest',
+        'diffusion_epoch': 'latest', # Latest fetches the state_{latest_epoch}.pt model
+        'value_epoch': 'latest', # Latest fetches the state_{latest_epoch}.pt model
+        'value2_epoch': 'latest', # Latest fetches the state_{latest_epoch}.pt model
 
         'verbose': True,
         'suffix': '0',

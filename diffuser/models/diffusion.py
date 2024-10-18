@@ -155,10 +155,11 @@ class GaussianDiffusion(nn.Module):
                 x_start=x_recon, x_t=x, t=t)
         return model_mean, posterior_variance, posterior_log_variance
 
+    # sample_kwargs contains sample_fn, guide, guide2, t_stopgrad, n_guide_steps, scale_grad_by_std
     @torch.no_grad()
     def p_sample_loop(self, shape, cond, verbose=True, return_chain=False, sample_fn=default_sample_fn, **sample_kwargs):
         device = self.betas.device
-
+        
         batch_size = shape[0]
         x = torch.randn(shape, device=device)
         x = apply_conditioning(x, cond, self.action_dim)
@@ -168,6 +169,9 @@ class GaussianDiffusion(nn.Module):
         progress = utils.Progress(self.n_timesteps) if verbose else utils.Silent()
         for i in reversed(range(0, self.n_timesteps)):
             t = make_timesteps(batch_size, i, device)
+
+            # sample_fn defined in sampling/functions.py. 
+            # guide, guide2, t_stopgrad, n_guide_steps, scale_grad_by_std are passed in sample_kwargs
             x, values = sample_fn(self, x, cond, t, **sample_kwargs)
             x = apply_conditioning(x, cond, self.action_dim)
 
@@ -228,6 +232,7 @@ class GaussianDiffusion(nn.Module):
         t = torch.randint(0, self.n_timesteps, (batch_size,), device=x.device).long()
         return self.p_losses(x, *args, t)
 
+    # Call to run diffusion. wargs contains sample_fn, guide, guide2, t_stopgrad, n_guide_steps, scale_grad_by_std
     def forward(self, cond, *args, **kwargs):
         return self.conditional_sample(cond, *args, **kwargs)
 

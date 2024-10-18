@@ -18,13 +18,17 @@ def import_class(_class):
     print(f'[ utils/config ] Imported {repo_name}.{module_name}:{class_name}')
     return _class
 
+
+# Config class for all work.
 class Config(collections.Mapping):
 
+    # Inits a config class
     def __init__(self, _class, verbose=True, savepath=None, device=None, **kwargs):
         self._class = import_class(_class)
         self._device = device
         self._dict = {}
 
+        # All the kwargs passed to utils.Config() in train, train_values, plan_guided are stored.
         for key, val in kwargs.items():
             self._dict[key] = val
 
@@ -61,6 +65,8 @@ class Config(collections.Mapping):
         except KeyError:
             raise AttributeError(attr)
 
+    # When the class is called in train, train_values, plan_guided, serialization...
+    # arguments are passes to classes like GaussianDiffusion.
     def __call__(self, *args, **kwargs):
         instance = self._class(*args, **kwargs, **self._dict)
         if self._device:
