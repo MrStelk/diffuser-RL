@@ -45,7 +45,6 @@ class ResidualTemporalBlock(nn.Module):
         out = self.blocks[1](out)
         return out + self.residual_conv(x)
 
-
 class TemporalUnet(nn.Module):
 
     def __init__(
@@ -145,6 +144,27 @@ class TemporalUnet(nn.Module):
         x = einops.rearrange(x, 'b t h -> b h t')
         return x
 
+
+
+class IcrlClassifier(nn.Module):
+    def __init__(
+        self,
+        horizon,
+        transition_dim,
+        cond_dim,
+        out_dim=1,
+        dim_mults=(1,2,4,8)
+    ):
+        super().__init__()
+
+        self.model = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(horizon*transition_dim,out_dim),
+            nn.Sigmoid()            
+        )
+
+    def forward(self, x, cond, time, *args):
+        return self.model(x)
 
 class ValueFunction(nn.Module):
 

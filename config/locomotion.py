@@ -64,7 +64,8 @@ base = {
     },
 
     'values': {
-        'model': 'models.ValueFunction',
+        'model': 'models.IcrlClassifier',
+        # 'model': 'models.ValueFunction',
         'diffusion': 'models.ValueDiffusion',
         'horizon': 32,
         'n_diffusion_steps': 20,
@@ -91,7 +92,7 @@ base = {
         ## training
         'n_steps_per_epoch': 10000,
         'loss_type': 'value_l2',
-        'n_train_steps': 200e3,
+        'n_train_steps': 30000,
         'batch_size': 32,
         'learning_rate': 2e-4,
         'gradient_accumulate_every': 2,

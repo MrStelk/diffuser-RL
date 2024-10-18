@@ -55,7 +55,7 @@ class Parser(utils.Parser):
 
 args = Parser().parse_args('values') # all args stored in config/locomotion.py under 'values' key.
 
-
+print("Hello\n\n\n\n", args.savepath, args.horizon, args.dataset)
 #-----------------------------------------------------------------------------#
 #---------------------------------- dataset ----------------------------------#
 #-----------------------------------------------------------------------------#
