@@ -26,18 +26,19 @@ def n_step_guided_p_sample(
         x = x + scale * grad
         x = apply_conditioning(x, cond, model.action_dim)
 
+    # p_mean_variance is the distribution p(x_(t-1) | x_t)
     model_mean, _, model_log_variance = model.p_mean_variance(x=x, cond=cond, t=t)
 
     # no noise when t == 0
     noise = torch.randn_like(x)
     noise[t == 0] = 0
 
-    return model_mean + model_std * noise, y
+    return model_mean + model_std * noise, y # Sampling from the p(x_(t-1) | x_t) distribution.
 
 
 @torch.no_grad()
 def n_step_guided_p_sample2(
-    model, x, cond, t, guide, guide2, scale=0.001, t_stopgrad=0, n_guide_steps=1, scale_grad_by_std=True,
+    model, x, cond, t, guide, guide2, scale=0.001, t_stopgrad=0, n_guide_steps=1, scale_grad_by_std=True, w1=0.5, w2=0.5
 ):
     model_log_variance = extract(model.posterior_log_variance_clipped, t, x.shape)
     model_std = torch.exp(0.5 * model_log_variance)
@@ -47,12 +48,16 @@ def n_step_guided_p_sample2(
         with torch.enable_grad():
             y, grad = guide.gradients(x, cond, t)
 
+            y2, grad2 = guide2.gradients(x, cond, t)
+
+        total_grad = w1 * grad + w2 * grad
+
         if scale_grad_by_std:
-            grad = model_var * grad
+            total_grad = model_var * total_grad
 
-        grad[t < t_stopgrad] = 0
+        total_grad[t < t_stopgrad] = 0
 
-        x = x + scale * grad
+        x = x + scale * total_grad
         x = apply_conditioning(x, cond, model.action_dim)
 
     model_mean, _, model_log_variance = model.p_mean_variance(x=x, cond=cond, t=t)

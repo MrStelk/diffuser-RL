@@ -134,6 +134,7 @@ class GaussianDiffusion(nn.Module):
         else:
             return noise
 
+    # Distribution q(x_(t-1) | x_t, x_0)
     def q_posterior(self, x_start, x_t, t):
         posterior_mean = (
             extract(self.posterior_mean_coef1, t, x_t.shape) * x_start +
@@ -143,7 +144,9 @@ class GaussianDiffusion(nn.Module):
         posterior_log_variance_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape)
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
+    # Distribution p(x_(t-1) | x_t)
     def p_mean_variance(self, x, cond, t):
+        # Model predicts noise. Then x_0 is estimated.
         x_recon = self.predict_start_from_noise(x, t=t, noise=self.model(x, cond, t))
 
         if self.clip_denoised:
@@ -151,6 +154,7 @@ class GaussianDiffusion(nn.Module):
         else:
             assert RuntimeError()
 
+        # Using estimated x_0, and the x_t, mean u of q(x_(t-1) | x_t, x_0) is calculated.
         model_mean, posterior_variance, posterior_log_variance = self.q_posterior(
                 x_start=x_recon, x_t=x, t=t)
         return model_mean, posterior_variance, posterior_log_variance
@@ -161,7 +165,7 @@ class GaussianDiffusion(nn.Module):
         device = self.betas.device
         
         batch_size = shape[0]
-        x = torch.randn(shape, device=device)
+        x = torch.randn(shape, device=device) # Pure noise x_T
         x = apply_conditioning(x, cond, self.action_dim)
 
         chain = [x] if return_chain else None
@@ -172,7 +176,7 @@ class GaussianDiffusion(nn.Module):
 
             # sample_fn defined in sampling/functions.py. 
             # guide, guide2, t_stopgrad, n_guide_steps, scale_grad_by_std are passed in sample_kwargs
-            x, values = sample_fn(self, x, cond, t, **sample_kwargs)
+            x, values = sample_fn(self, x, cond, t, **sample_kwargs) # x_(t-1) from x_t
             x = apply_conditioning(x, cond, self.action_dim)
 
             progress.update({'t': i, 'vmin': values.min().item(), 'vmax': values.max().item()})
