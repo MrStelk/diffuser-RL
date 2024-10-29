@@ -3,6 +3,9 @@ import torch.nn as nn
 import einops
 from einops.layers.torch import Rearrange
 import pdb
+from typing import Any, Callable, Dict, Optional, Tuple, Type, Union
+import numpy as np
+from stable_baselines3.common.torch_layers import create_mlp
 
 from .helpers import (
     SinusoidalPosEmb,
@@ -152,19 +155,122 @@ class IcrlClassifier(nn.Module):
         horizon,
         transition_dim,
         cond_dim,
+        # out_dim=1,
+        # dim_mults=(1,2,4,8),
+        
+        obs_dim: int,
+        acs_dim: int,
+        hidden_sizes: Tuple[int, ...],
+        batch_size: int,
+        lr_schedule: Callable[[float], float],
+        expert_obs: np.ndarray,
+        expert_acs: np.ndarray,
+        is_discrete: bool,
+        regularizer_coeff: float = 0.,
+        obs_select_dim: Optional[Tuple[int, ...]] = None,
+        acs_select_dim: Optional[Tuple[int, ...]] = None,
+        optimizer_class: Type[torch.optim.Optimizer] = torch.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        no_importance_sampling: bool = False,
+        per_step_importance_sampling: bool = False,
+        clip_obs: Optional[float] = 10.,
+        initial_obs_mean: Optional[np.ndarray] = None,
+        initial_obs_var: Optional[np.ndarray] = None,
+        action_low: Optional[float] = None,
+        action_high: Optional[float] = None,
+        target_kl_old_new: float = -1,
+        target_kl_new_old: float = -1,
+        train_gail_lambda: Optional[bool] = False,
+        eps: float = 1e-5,
+        device: str = "cpu",
         out_dim=1,
         dim_mults=(1,2,4,8)
     ):
-        super().__init__()
+        # super().__init__()
 
-        self.model = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(horizon*transition_dim,out_dim),
-            nn.Sigmoid()            
+        # self.model = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(horizon*transition_dim,out_dim),
+        #     nn.Sigmoid()            
+        # )
+        super(IcrlClassifier, self).__init__()
+
+        self.obs_dim = obs_dim
+        self.acs_dim = acs_dim
+        self.obs_select_dim = obs_select_dim
+        self.acs_select_dim = acs_select_dim
+        self._define_input_dims()
+
+        self.expert_obs = expert_obs
+        self.expert_acs = expert_acs
+
+        self.hidden_sizes = hidden_sizes
+        self.batch_size = batch_size
+        self.is_discrete = is_discrete
+        self.regularizer_coeff = regularizer_coeff
+        self.importance_sampling = not no_importance_sampling
+        self.per_step_importance_sampling = per_step_importance_sampling
+        self.clip_obs = clip_obs
+        self.device = device
+        self.eps = eps
+
+        self.train_gail_lambda = train_gail_lambda
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+            # Small values to avoid NaN in Adam optimizer
+            if optimizer_class == torch.optim.Adam:
+                optimizer_kwargs["eps"] = 1e-5
+        self.optimizer_kwargs = optimizer_kwargs
+        self.optimizer_class = optimizer_class
+        self.lr_schedule = lr_schedule
+
+        self.current_obs_mean = initial_obs_mean
+        self.current_obs_var = initial_obs_var
+        self.action_low = action_low
+        self.action_high = action_high
+
+        self.target_kl_old_new = target_kl_old_new
+        self.target_kl_new_old = target_kl_new_old
+
+        self.current_progress_remaining = 1.
+
+        self._build()
+
+    def _define_input_dims(self) -> None:
+        self.select_dim = []
+        if self.obs_select_dim is None:
+            self.select_dim += [i for i in range(self.obs_dim)]
+        elif self.obs_select_dim[0] != -1:
+            self.select_dim += self.obs_select_dim
+        if self.acs_select_dim is None:
+            self.select_dim += [i for i in range(self.acs_dim)]
+        elif self.acs_select_dim[0] != -1:
+            self.select_dim += self.acs_select_dim
+        assert len(self.select_dim) > 0, ""
+
+        self.input_dims = len(self.select_dim)
+
+    def _build(self) -> None:
+
+        # Create network and add sigmoid at the end
+        self.network = nn.Sequential(
+                *create_mlp(self.input_dims, 1, self.hidden_sizes),
+                nn.Sigmoid()
         )
+        self.network.to(self.device)
+
+        # Build optimizer
+        if self.optimizer_class is not None:
+            self.optimizer = self.optimizer_class(self.parameters(), lr=self.lr_schedule(1), **self.optimizer_kwargs)
+        else:
+            self.optimizer = None
+        if self.train_gail_lambda:
+            self.criterion = nn.BCELoss()
 
     def forward(self, x, cond, time, *args):
-        return self.model(x)
+        #return self.model(x)
+        return self.network(x)
 
 class ValueFunction(nn.Module):
 
