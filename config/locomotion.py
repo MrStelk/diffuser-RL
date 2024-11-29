@@ -73,7 +73,7 @@ base = {
         'renderer': 'utils.MuJoCoRenderer',
 
         ## value-specific kwargs
-        'discount': 0.99,
+        'discount': 0.997,
         'termination_penalty': -100,
         'normed': False,
 
@@ -109,9 +109,9 @@ base = {
 
     'plan': {
         'guide': 'sampling.ValueGuide', # Guidance 1 class.
-        'guide2': 'sampling.ValueGuide', # Guidance 2 class.
-        # 'policy': 'sampling.GuidedPolicy', # Policy class
-        'policy': 'sampling.GuidedPolicy2', # Second Policy class
+        # 'guide2': 'sampling.ValueGuide', # Guidance 2 class.
+        'policy': 'sampling.GuidedPolicy', # Policy class
+        # 'policy': 'sampling.GuidedPolicy2', # Second Policy class
         'max_episode_length': 1000,
         'batch_size': 64,
         'preprocess_fns': [],
@@ -138,11 +138,12 @@ base = {
 
         ## value function
         'discount': 0.997,
+        'discount2' : 0.99,
 
         ## loading
         'diffusion_loadpath': 'f:diffusion/defaults_H{horizon}_T{n_diffusion_steps}', # loadpath of diffusion model.
         'value_loadpath': 'f:values/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}', # loadpath of guidance model.
-        'value2_loadpath' : 'f:values2/defaults_H{horizon}_T{n_diffusion_steps}_d{discount}', # loadpath of second guidance model.
+        'value2_loadpath' : 'f:values2/defaults_H{horizon}_T{n_diffusion_steps}_d{discount2}', # loadpath of second guidance model.
 
         'diffusion_epoch': 'latest', # Latest fetches the state_{latest_epoch}.pt model
         'value_epoch': 'latest', # Latest fetches the state_{latest_epoch}.pt model

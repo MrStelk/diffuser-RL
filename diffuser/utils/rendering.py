@@ -261,7 +261,8 @@ def rollouts_from_state(env, state, actions_l):
 def rollout_from_state(env, state, actions):
     qpos_dim = env.sim.data.qpos.size
     env.set_state(state[:qpos_dim], state[qpos_dim:])
-    observations = [env._get_obs()]
+    # observations = [env._get_obs()]
+    observations = [env.reset()]
     for act in actions:
         obs, rew, term, _ = env.step(act)
         observations.append(obs)

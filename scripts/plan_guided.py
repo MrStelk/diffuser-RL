@@ -76,10 +76,10 @@ value_experiment = utils.load_diffusion(
     epoch=args.value_epoch, seed=args.seed,
 )
 
-value2_experiment = utils.load_diffusion(
-    args.loadbase, args.dataset, args.value2_loadpath,
-    epoch=args.value2_epoch, seed=args.seed,
-)
+# value2_experiment = utils.load_diffusion(
+#     args.loadbase, args.dataset, args.value2_loadpath,
+#     epoch=args.value2_epoch, seed=args.seed,
+# )
 """
 load_diffusion calls load_config function (both defined in /diffusers/utils/serialization.py).
 load_config is give the paths to configuration files (.pkl extension). It loads them and returns the configurations.
@@ -92,7 +92,7 @@ All the instantiations are retuned in  named tuple with (dataset renderer model 
 
 ## ensure that the diffusion model and value function are compatible with each other
 utils.check_compatibility(diffusion_experiment, value_experiment)
-utils.check_compatibility(diffusion_experiment, value2_experiment)
+# utils.check_compatibility(diffusion_experiment, value2_experiment)
 """
 check_compatability returns True if experiment_1 and experiment_2 have
 the same normalizers and number of diffusion steps.
@@ -104,7 +104,7 @@ renderer = diffusion_experiment.renderer # renderer
 
 ## initialize value guide
 value_function = value_experiment.ema # Classifier model weights.
-value2_function = value2_experiment.ema
+# value2_function = value2_experiment.ema
 
 # Config class of the guide. configs in the load_diffusion are of model_config.
 # Here a guide config is being done. sampling.ValueGuide class and model is registered in member variables.
@@ -112,8 +112,8 @@ guide_config = utils.Config(args.guide, model=value_function, verbose=False)
 guide = guide_config()
 
 
-guide2_config = utils.Config(args.guide2, model=value2_function, verbose=False)
-guide2 = guide2_config()
+# guide2_config = utils.Config(args.guide2, model=value2_function, verbose=False)
+# guide2 = guide2_config()
 
 # logger
 logger_config = utils.Config(
@@ -130,36 +130,37 @@ Policy class (defined in sampling/policies.py) has the __call__ method which run
 denoinsing process. args.policy is sampling.GuidedPolicy defined in sampling/policies.py
 This config class is being instantiated here.
 """
-# policy_config = utils.Config(
-#     args.policy,
-#     guide=guide,
-#     scale=args.scale,
-#     diffusion_model=diffusion,
-#     normalizer=dataset.normalizer,
-#     preprocess_fns=args.preprocess_fns,
-#     ## sampling kwargs
-#     sample_fn=sampling.n_step_guided_p_sample,
-#     n_guide_steps=args.n_guide_steps,
-#     t_stopgrad=args.t_stopgrad,
-#     scale_grad_by_std=args.scale_grad_by_std,
-#     verbose=False,
-# )
 
 policy_config = utils.Config(
-    args.policy,
-    guide=guide,
-    guide2=guide2,
-    scale=args.scale,
-    diffusion_model=diffusion,
-    normalizer=dataset.normalizer,
-    preprocess_fns=args.preprocess_fns,
-    ## sampling kwargs
-    sample_fn=sampling.n_step_guided_p_sample2,
-    n_guide_steps=args.n_guide_steps,
-    t_stopgrad=args.t_stopgrad,
-    scale_grad_by_std=args.scale_grad_by_std,
-    verbose=False,
-)
+     args.policy,
+     guide=guide,
+     scale=args.scale,
+     diffusion_model=diffusion,
+     normalizer=dataset.normalizer,
+     preprocess_fns=args.preprocess_fns,
+     ## sampling kwargs
+     sample_fn=sampling.n_step_guided_p_sample,
+     n_guide_steps=args.n_guide_steps,
+     t_stopgrad=args.t_stopgrad,
+     scale_grad_by_std=args.scale_grad_by_std,
+     verbose=False,
+ )
+
+#policy_config = utils.Config(
+#    args.policy,
+#    guide=guide,
+#    guide2=guide2,
+#    scale=args.scale,
+#    diffusion_model=diffusion,
+#    normalizer=dataset.normalizer,
+#    preprocess_fns=args.preprocess_fns,
+#    ## sampling kwargs
+#    sample_fn=sampling.n_step_guided_p_sample2,
+#    n_guide_steps=args.n_guide_steps,
+#    t_stopgrad=args.t_stopgrad,
+#    scale_grad_by_std=args.scale_grad_by_std,
+#    verbose=False,
+#)
 
 
 logger = logger_config()
@@ -205,7 +206,7 @@ for t in range(args.max_episode_length):
     rollout.append(next_observation.copy())
 
     ## render every `args.vis_freq` steps
-    # logger.log(t, samples, state, rollout)
+    logger.log(t, samples, state, rollout)
     # print("rollout : ", len(rollout), len(rollout[0]), rollout)
     # print("samples: ", len(samples[1][0]), samples[1][0])
     # print("state: ", len(state), state)
